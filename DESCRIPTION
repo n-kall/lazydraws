@@ -3,9 +3,7 @@ Title: Lazy Posterior Draws in Parquet Files
 Version: 0.0.1
 Authors@R: person("Noa", "Kallioinen", role = c("aut", "cre"),
     email = "33577035+n-kall@users.noreply.github.com")
-Description: Stream CmdStanR sampling output to Parquet files using DuckDB.
-    Query selected variables and draw indices directly into posterior draws
-    objects while keeping the source on disk. No Arrow or dplyr dependency is required.
+Description: Read posterior draws from parquet files without loading the entire file into memory.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
