@@ -12,6 +12,8 @@ library(lazydraws)
 library(posterior)
 
 drw <- load_draws("draws.parquet")
+print(drw)                       # counts and the first few variable names
+variables(drw)                   # all variable names, without reading draws
 drw |>
   subset_draws(variable = c("mu", "theta"), chain = 1:2) |>
   summarise_draws()
@@ -25,8 +27,11 @@ close_draws(drw)
 ```
 
 `load_draws()` returns an S3 object of class `lazydraws`, holding a DuckDB
-connection and a view over the Parquet file. Only the schema is inspected at
-load time. `posterior::subset_draws()` dispatches to `subset_draws.lazydraws()`,
+connection and a view over the Parquet file. The schema and index columns are
+inspected at load time to cache names and counts of draws, chains, and iterations.
+Printing and `posterior::variables()` use this cache; no parameter values are
+read. Use `print(drw, max_variables = 4)` to change how many names are shown.
+`posterior::subset_draws()` dispatches to `subset_draws.lazydraws()`,
 executes the selection, and returns a `draws_df` containing the selected values.
 No collection step is needed. Further subsets of that result use posterior's
 ordinary in-memory methods.

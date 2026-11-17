@@ -21,9 +21,13 @@ Load lazy posterior draws from Parquet
 }
 \details{
 Creates an in-memory DuckDB connection and a view over the Parquet
-file. Only the schema is inspected; parameter values are not loaded or
-copied into a database table. The Parquet file must remain available while
-the connection is used.
+file. The schema and index columns are inspected to cache variable names
+and counts of draws, chains, and iterations; parameter values are not loaded
+or copied into a database table. Printing and \code{\link[posterior:variables]{posterior::variables()}} use
+these cached details without querying the file. Printing shows up to
+\code{getOption("posterior.max_variables", 8)} names; override this with
+\code{print(x, max_variables = ...)}. Cached details describe the file at load
+time. The Parquet file must remain available while the connection is used.
 
 Returns an S3 object of class \code{lazydraws}. Use \code{\link[posterior:subset_draws]{posterior::subset_draws()}}
 to execute a selection and return an ordinary \link[posterior:draws_df]{posterior::draws_df}. Only

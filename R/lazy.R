@@ -76,11 +76,40 @@ validate_indices <- function(x) {
   }
 }
 
+#' @importFrom posterior variables
 #' @export
-print.lazydraws <- function(x, ...) {
+variables.lazydraws <- function(x, reserved = FALSE, with_indices = TRUE, ...) {
+  posterior::variables(draws_schema(x$variables), reserved = reserved,
+                       with_indices = with_indices)
+}
+
+#' @export
+print.lazydraws <- function(x,
+                           max_variables = getOption("posterior.max_variables", 8),
+                           reserved = FALSE, ...) {
+  if (!is.numeric(max_variables) || length(max_variables) != 1L ||
+      is.na(max_variables) || !is.finite(max_variables) || max_variables < 0 ||
+      max_variables != floor(max_variables)) {
+    stop("max_variables must be a nonnegative integer.", call. = FALSE)
+  }
   closed <- !is.null(x$con) && !DBI::dbIsValid(x$con)
   source <- if (!is.null(x$file)) x$file else x$source
+  vars <- variables(x, reserved = reserved)
+  shown <- vars[seq_len(min(max_variables, length(vars)))]
+  counts <- format(c(x$niterations, x$nchains, x$ndraws, length(vars)),
+                   scientific = FALSE, trim = TRUE)
   cat("Lazy posterior draws", if (closed) " (closed)" else "", "\n",
-      "Source: ", source, "\n", length(x$variables), " variables\n", sep = "")
+      counts[1], " iterations, ", counts[2], " chains, ", counts[3],
+      " draws, ", counts[4], " variables\n", "Source: ", source, "\n", sep = "")
+  names <- if (length(shown)) paste(shown, collapse = ", ") else {
+    if (length(vars)) "(not shown)" else "(none)"
+  }
+  cat(paste(strwrap(paste0("Variables: ", names), exdent = 2), collapse = "\n"),
+      "\n", sep = "")
+  remaining <- length(vars) - length(shown)
+  if (remaining > 0) {
+    cat("# ... with ", remaining, " more variable",
+        if (remaining != 1) "s" else "", "\n", sep = "")
+  }
   invisible(x)
 }

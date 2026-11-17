@@ -5,9 +5,13 @@
 #' @param table Name of the DuckDB view to create. Defaults to `"draws"`.
 #'
 #' @details Creates an in-memory DuckDB connection and a view over the Parquet
-#'   file. Only the schema is inspected; parameter values are not loaded or
-#'   copied into a database table. The Parquet file must remain available while
-#'   the connection is used.
+#'   file. The schema and index columns are inspected to cache variable names
+#'   and counts of draws, chains, and iterations; parameter values are not loaded
+#'   or copied into a database table. Printing and [posterior::variables()] use
+#'   these cached details without querying the file. Printing shows up to
+#'   `getOption("posterior.max_variables", 8)` names; override this with
+#'   `print(x, max_variables = ...)`. Cached details describe the file at load
+#'   time. The Parquet file must remain available while the connection is used.
 #'
 #'   Returns an S3 object of class `lazydraws`. Use [posterior::subset_draws()]
 #'   to execute a selection and return an ordinary [posterior::draws_df]. Only

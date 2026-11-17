@@ -32,12 +32,16 @@ select_variables <- function(available, variable = NULL, regex = FALSE,
   if (is.null(variable)) {
     return(available)
   }
-  frame <- structure(rep(list(0), length(available)), names = available,
-                     class = "data.frame", row.names = 1L)
-  schema <- posterior::as_draws_df(frame)
+  schema <- draws_schema(available)
   posterior::variables(posterior::subset_draws(
     schema, variable = variable, regex = regex, exclude = exclude, scalar = scalar
   ))
+}
+
+draws_schema <- function(available) {
+  frame <- structure(rep(list(0), length(available)), names = available,
+                     class = "data.frame", row.names = 1L)
+  posterior::as_draws_df(frame)
 }
 
 source_sql <- function(x, con) {
@@ -82,6 +86,15 @@ as_lazy_draws <- function(x, table = "draws") {
     stop("Draws must contain .chain, .iteration, and .draw columns.", call. = FALSE)
   }
   out$variables <- setdiff(fields, indices)
+  counts <- with_connection(out, function(con) {
+    DBI::dbGetQuery(con, paste0(
+      'SELECT count(*) AS ndraws, count(DISTINCT ".chain") AS nchains, ',
+      'count(DISTINCT ".iteration") AS niterations FROM ', source_sql(out, con)
+    ))
+  })
+  out$ndraws <- as.numeric(counts$ndraws)
+  out$nchains <- as.numeric(counts$nchains)
+  out$niterations <- as.numeric(counts$niterations)
   class(out) <- "lazydraws"
   out
 }
