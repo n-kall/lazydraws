@@ -13,14 +13,6 @@ write_draws <- function(x = example_frame()) {
   file
 }
 
-fixture_files <- function() {
-  test_path("fixtures", paste0("model1-", 1:2, "-warmup.csv"))
-}
-
-fixture_fit <- function(files = fixture_files()) {
-  cmdstanr::as_cmdstan_fit(files, check_diagnostics = FALSE)
-}
-
 read_draws <- function(file) {
   x <- load_draws(file)
   on.exit(close_draws(x))

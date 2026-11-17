@@ -19,10 +19,10 @@ test_that("load_draws stays lazy and subset_draws returns in-memory draws", {
   expect_equal(nrow(posterior::summarise_draws(result, "mean")), 1)
 })
 
-test_that("custom view names and file paths are carried by the object", {
+test_that("file paths with quotes are handled safely", {
   file <- paste0(tempfile(), "' draws.parquet")
   file.copy(write_draws(), file)
-  drw <- load_draws(file, table = "draws with ' quotes")
+  drw <- load_draws(file)
   on.exit(close_draws(drw))
   expect_equal(subset_draws(drw), example_frame())
   expect_equal(subset_draws(drw, variable = "mu"),
@@ -66,5 +66,4 @@ test_that("load failures close the connection and invalid arguments fail", {
   expect_false(DBI::dbIsValid(con))
   expect_error(load_draws("nonexistent.parquet"))
   expect_error(load_draws(NA_character_), "nonempty string")
-  expect_error(load_draws("draws.parquet", table = ""), "nonempty string")
 })

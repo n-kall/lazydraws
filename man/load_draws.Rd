@@ -4,13 +4,11 @@
 \alias{load_draws}
 \title{Load lazy posterior draws from Parquet}
 \usage{
-load_draws(file, table = "draws")
+load_draws(file)
 }
 \arguments{
 \item{file}{Path to a Parquet file containing draws and the \code{.chain},
 \code{.iteration}, and \code{.draw} columns.}
-
-\item{table}{Name of the DuckDB view to create. Defaults to \code{"draws"}.}
 }
 \value{
 An S3 object of class \code{lazydraws}. It does not inherit from \code{draws};
@@ -38,17 +36,17 @@ reading only the relevant index column. ID methods require an open source.
 Returns an S3 object of class \code{lazydraws}. Use \code{\link[posterior:subset_draws]{posterior::subset_draws()}}
 to execute a selection and return an ordinary \link[posterior:draws_df]{posterior::draws_df}. Only
 selected parameter values enter R. With no selectors, all draws are read.
-The view name is stored in the object, including for a custom \code{table}.
 
 Row selection first reads the index columns into R, applies posterior's
 indexing rules, then fetches selected values through a DuckDB join. It uses
 memory for the original draw indices plus the selected parameter values.
 
-The source remains open and reusable after subsetting. \code{\link[=close_draws]{close_draws()}}
-closes its connection without affecting already returned draws. Automatic
-cleanup runs when the last object holding the connection is garbage
-collected, or when the R session exits. Objects are session-local; reopen
-the Parquet file rather than serializing a connection.
+The source remains open and reusable after subsetting. Its connection is
+cleaned up automatically when the last \code{lazydraws} object referring to it
+is garbage-collected, or when the R session exits. Use \code{\link[=close_draws]{close_draws()}} to
+release the connection immediately without affecting already returned
+draws. Objects are session-local; reopen the Parquet file rather than
+serializing a connection.
 }
 \examples{
 \dontrun{
@@ -56,6 +54,5 @@ drw <- load_draws("draws.parquet")
 drw |>
   posterior::subset_draws(variable = "theta", chain = 1:2) |>
   posterior::summarise_draws()
-close_draws(drw)
 }
 }

@@ -44,57 +44,27 @@ draws_schema <- function(available) {
   posterior::as_draws_df(frame)
 }
 
-source_sql <- function(x, con) {
-  if (is.null(x$con)) {
-    paste0("read_parquet(", quote_strings(con, x$source), ")")
-  } else {
-    as.character(DBI::dbQuoteIdentifier(con, x$source))
-  }
-}
-
-with_connection <- function(x, fun) {
-  con <- x$con
-  if (is.null(con)) {
-    con <- connect_draws()
-    on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
-  } else if (!DBI::dbIsValid(con)) {
+check_connection <- function(con) {
+  if (!DBI::dbIsValid(con)) {
     stop("The DuckDB connection is closed.", call. = FALSE)
   }
-  fun(con)
+  con
 }
 
-as_lazy_draws <- function(x, table = "draws") {
-  if (inherits(x, "lazydraws")) {
-    if (!is.null(x$con) && !DBI::dbIsValid(x$con)) {
-      stop("The DuckDB connection is closed.", call. = FALSE)
-    }
-    return(x)
-  }
-  if (inherits(x, "duckdb_connection")) {
-    check_string(table, "table")
-    out <- list(con = x, source = table)
-  } else {
-    check_string(x, "x (Parquet path or DuckDB connection)")
-    out <- list(con = NULL, source = normalizePath(path.expand(x), mustWork = TRUE))
-  }
-  fields <- with_connection(out, function(con) {
-    names(DBI::dbGetQuery(con, paste0(
-      "SELECT * FROM ", source_sql(out, con), " LIMIT 0"
-    )))
-  })
+new_lazy_draws <- function(con) {
+  con <- check_connection(con)
+  fields <- names(DBI::dbGetQuery(con, "SELECT * FROM draws LIMIT 0"))
   if (!all(indices %in% fields)) {
     stop("Draws must contain .chain, .iteration, and .draw columns.", call. = FALSE)
   }
-  out$variables <- setdiff(fields, indices)
-  counts <- with_connection(out, function(con) {
-    DBI::dbGetQuery(con, paste0(
-      'SELECT count(*) AS ndraws, count(DISTINCT ".chain") AS nchains, ',
-      'count(DISTINCT ".iteration") AS niterations FROM ', source_sql(out, con)
-    ))
-  })
-  out$ndraws <- as.numeric(counts$ndraws)
-  out$nchains <- as.numeric(counts$nchains)
-  out$niterations <- as.numeric(counts$niterations)
-  class(out) <- "lazydraws"
-  out
+  counts <- DBI::dbGetQuery(con, paste0(
+    'SELECT count(*) AS ndraws, count(DISTINCT ".chain") AS nchains, ',
+    'count(DISTINCT ".iteration") AS niterations FROM draws'
+  ))
+  structure(list(
+    con = con, variables = setdiff(fields, indices),
+    ndraws = as.numeric(counts$ndraws),
+    nchains = as.numeric(counts$nchains),
+    niterations = as.numeric(counts$niterations)
+  ), class = "lazydraws")
 }

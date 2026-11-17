@@ -7,20 +7,21 @@ dependencies are **duckdb**, **DBI**, and **posterior**.
 library("posterior")
 library("lazydraws")
 
-drw <- load_draws("draws.parquet") # initiates a connection but does not load into memory
+drw <- load_draws("draws.parquet")
 
 drw |>
-  subset_draws(variable = c("mu", "theta"), chain = 1:2) |> # loads the selection into memory
+  subset_draws(variable = c("mu", "theta"), chain = 1:2) |>
   summarise_draws()
-
-close_draws(drw) # closes the connection
 ```
 
 `load_draws()` returns an S3 object of class `lazydraws`, holding a DuckDB
-connection and a view over the Parquet file. `nchains()`, `nvariables()`, `ndraws()`, `variables()` access metadata from the `lazydraws` object.
+connection and a view over the Parquet file. Parameter values stay on disk.
+`nchains()`, `niterations()`, `ndraws()`, `nvariables()`, and `variables()` use
+cached metadata. `chain_ids()`, `iteration_ids()`, and `draw_ids()` query the
+corresponding index columns.
 
-`subset_draws()` will query the database and return a `draws_df` into memory,
-which can be used with `posterior` functions.
+`subset_draws()` queries the selected draws and returns an in-memory `draws_df`
+for use with `posterior` functions. With no selectors, it reads all draws.
 
 Operations such as `mutate_variables()`, `thin_draws()`, `summarise_draws()`,
 and draws-format conversions require in-memory draws. Calling them directly on
@@ -32,8 +33,10 @@ drw |>
   mutate_variables(theta_diff = `theta[1]` - `theta[2]`)
 ```
 
-The source stays open and reusable after subsetting. `close_draws()` closes its
-connection.
+The source stays open and reusable after subsetting. Its connection is cleaned
+up automatically when the last `lazydraws` object referring to it is
+garbage-collected, or when R exits. Use `close_draws(drw)` if you want to release
+the connection immediately; already returned draws remain usable.
 
 Installation:
 

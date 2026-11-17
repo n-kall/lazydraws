@@ -10,8 +10,7 @@ subset_draws.lazydraws <- function(x, variable = NULL, iteration = NULL, chain =
   if (!is.null(draw) && (!is.null(chain) || !is.null(iteration))) {
     stop("Cannot combine draw with chain or iteration.", call. = FALSE)
   }
-  x <- as_lazy_draws(x)
-  x$variables <- select_variables(x$variables, variable, regex, exclude, scalar)
+  variables <- select_variables(x$variables, variable, regex, exclude, scalar)
   selection <- NULL
   if (!is.null(chain) || !is.null(iteration) || !is.null(draw)) {
     selection <- list(
@@ -19,50 +18,52 @@ subset_draws.lazydraws <- function(x, variable = NULL, iteration = NULL, chain =
       unique = unique, exclude = exclude
     )
   }
-  fetch_draws(x, selection)
+  fetch_draws(x, variables, selection)
 }
 
-fetch_draws <- function(x, selection = NULL) {
-  with_connection(x, function(con) {
-    source <- source_sql(x, con)
-    if (is.null(selection)) {
-      columns <- paste(quote_columns(con, c(x$variables, indices)), collapse = ", ")
-      frame <- DBI::dbGetQuery(con, paste0(
-        "SELECT ", columns, " FROM ", source,
-        ' ORDER BY ".chain", ".iteration"'
-      ))
-      validate_indices(frame)
-      return(posterior::as_draws_df(frame))
-    }
+fetch_draws <- function(x, variables, selection = NULL) {
+  con <- check_connection(x$con)
+  if (is.null(selection)) {
+    columns <- paste(quote_columns(con, c(variables, indices)), collapse = ", ")
     frame <- DBI::dbGetQuery(con, paste0(
-      'SELECT ".chain", ".iteration", ".draw" FROM ', source,
-      ' ORDER BY ".chain", ".iteration"'
+      "SELECT ", columns, ' FROM draws ORDER BY ".chain", ".iteration"'
     ))
     validate_indices(frame)
-    # Keep original keys as a regular variable, so posterior repairs only the
-    # visible indices while retaining the keys needed to fetch source values.
-    frame$source_draw <- frame$.draw
-    index <- posterior::as_draws_df(frame)
-    index <- do.call(posterior::subset_draws, c(list(x = index), selection))
-    map <- as.data.frame(index)
-    map$output_order <- seq_len(nrow(map))
-    name <- basename(tempfile("lazydraws_indices_"))
-    duckdb::duckdb_register(con, name, map)
-    on.exit(duckdb::duckdb_unregister(con, name), add = TRUE)
-    values <- if (length(x$variables)) {
-      paste0("d.", quote_columns(con, x$variables))
-    } else {
-      character()
-    }
-    columns <- paste(c(values, paste0("i.", quote_columns(con, indices))),
-                     collapse = ", ")
-    frame <- DBI::dbGetQuery(con, paste0(
-      "SELECT ", columns, " FROM ", source, " AS d JOIN ",
-      quote_columns(con, name), ' AS i ON d.".draw" = i.source_draw',
-      " ORDER BY i.output_order"
-    ))
-    posterior::as_draws_df(frame)
-  })
+    return(posterior::as_draws_df(frame))
+  }
+  map <- selection_map(con, selection)
+  name <- basename(tempfile("lazydraws_indices_"))
+  duckdb::duckdb_register(con, name, map)
+  on.exit(duckdb::duckdb_unregister(con, name), add = TRUE)
+  values <- if (length(variables)) {
+    paste0("d.", quote_columns(con, variables))
+  } else {
+    character()
+  }
+  columns <- paste(c(values, paste0("i.", quote_columns(con, indices))),
+                   collapse = ", ")
+  frame <- DBI::dbGetQuery(con, paste0(
+    "SELECT ", columns, " FROM draws AS d JOIN ",
+    quote_columns(con, name), ' AS i ON d.".draw" = i.source_draw',
+    " ORDER BY i.output_order"
+  ))
+  posterior::as_draws_df(frame)
+}
+
+selection_map <- function(con, selection) {
+  frame <- DBI::dbGetQuery(con, paste0(
+    'SELECT ".chain", ".iteration", ".draw" FROM draws',
+    ' ORDER BY ".chain", ".iteration"'
+  ))
+  validate_indices(frame)
+  # Keep original keys as a regular variable, so posterior repairs only the
+  # visible indices while retaining the keys needed to fetch source values.
+  frame$source_draw <- frame$.draw
+  index <- posterior::as_draws_df(frame)
+  index <- do.call(posterior::subset_draws, c(list(x = index), selection))
+  map <- as.data.frame(index)
+  map$output_order <- seq_len(nrow(map))
+  map
 }
 
 validate_indices <- function(x) {
@@ -92,8 +93,8 @@ print.lazydraws <- function(x,
       max_variables != floor(max_variables)) {
     stop("max_variables must be a nonnegative integer.", call. = FALSE)
   }
-  closed <- !is.null(x$con) && !DBI::dbIsValid(x$con)
-  source <- if (!is.null(x$file)) x$file else x$source
+  closed <- !DBI::dbIsValid(x$con)
+  source <- if (!is.null(x$file)) x$file else "draws"
   vars <- variables(x, reserved = reserved)
   shown <- vars[seq_len(min(max_variables, length(vars)))]
   counts <- format(c(x$niterations, x$nchains, length(vars)),

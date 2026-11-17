@@ -48,7 +48,7 @@ test_that("metadata inspection does not fetch parameter columns", {
     "CREATE VIEW draws AS SELECT INTERVAL '1 month' AS unused, ",
     '2 AS ".chain", 10 AS ".iteration", 101 AS ".draw"'
   ))
-  x <- as_lazy_draws(con)
+  x <- new_lazy_draws(con)
   expect_equal(posterior::nchains(x), 1)
   expect_equal(posterior::niterations(x), 1)
   expect_equal(posterior::ndraws(x), 1)

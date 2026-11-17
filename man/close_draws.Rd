@@ -17,6 +17,8 @@ Close the connection of lazy draws
 }
 \details{
 Calling this function again on a closed object is harmless.
-Subsetting does not close the source connection automatically, allowing
-repeated inspection. Draws already returned by subsetting remain usable.
+This is optional: the connection is cleaned up automatically when the last
+\code{lazydraws} object referring to it is garbage-collected, or when R exits.
+Subsetting keeps the source open for repeated inspection. Draws already
+returned by subsetting remain usable after closing the source.
 }

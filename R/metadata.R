@@ -41,13 +41,11 @@ draw_ids.lazydraws <- function(x) {
 }
 
 read_index_ids <- function(x, column) {
-  with_connection(x, function(con) {
-    column <- quote_columns(con, column)
-    ids <- DBI::dbGetQuery(con, paste0(
-      "SELECT DISTINCT ", column, " FROM ", source_sql(x, con),
-      " ORDER BY ", column
-    ))[[1]]
-    # Match posterior's integer ID vectors without manufacturing a sequence.
-    as.integer(ids)
-  })
+  con <- check_connection(x$con)
+  column <- quote_columns(con, column)
+  ids <- DBI::dbGetQuery(con, paste0(
+    "SELECT DISTINCT ", column, " FROM draws ORDER BY ", column
+  ))[[1]]
+  # Match posterior's integer ID vectors without manufacturing a sequence.
+  as.integer(ids)
 }
