@@ -11,7 +11,6 @@ S3method(print,lazydraws)
 S3method(subset_draws,lazydraws)
 S3method(variables,lazydraws)
 export(close_draws)
-export(cmdstanr_to_parquet_draws)
 export(load_draws)
 importFrom(posterior,
   chain_ids,
