@@ -1,0 +1,22 @@
+Package: lazydraws
+Title: Lazy Posterior Draws in Parquet Files
+Version: 0.0.1
+Authors@R: person("Noa", "Kallioinen", role = c("aut", "cre"),
+    email = "33577035+n-kall@users.noreply.github.com")
+Description: Stream CmdStanR sampling output to Parquet files using DuckDB.
+    Query selected variables and draw indices directly into posterior draws
+    objects while keeping the source on disk. No Arrow or dplyr dependency is required.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports:
+    DBI,
+    duckdb (>= 2.0.0),
+    posterior (>= 1.5.0)
+Suggests:
+    cmdstanr,
+    testthat (>= 3.0.0)
+Additional_repositories: https://stan-dev.r-universe.dev
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.1
