@@ -85,7 +85,7 @@ test_that("subsetting executes immediately and the source stays reusable", {
   expect_identical(posterior::variables(b), "tau")
   expect_identical(x$variables, posterior::variables(example_frame()))
   expect_true(DBI::dbIsValid(x$con))
-  expect_output(print(x), "Lazy posterior draws")
+  expect_output(print(x), "# A lazydraws:", fixed = TRUE)
   expect_error(subset_draws(x, chain = 999))
   unlink(file)
   expect_error(subset_draws(x, variable = "mu"))

@@ -29,6 +29,12 @@ these cached details without querying the file. Printing shows up to
 \code{print(x, max_variables = ...)}. Cached details describe the file at load
 time. The Parquet file must remain available while the connection is used.
 
+\code{\link[posterior:nchains]{posterior::nchains()}}, \code{\link[posterior:niterations]{posterior::niterations()}}, \code{\link[posterior:ndraws]{posterior::ndraws()}},
+and \code{\link[posterior:nvariables]{posterior::nvariables()}} use cached metadata, including after closing
+the source. \code{\link[posterior:chain_ids]{posterior::chain_ids()}}, \code{\link[posterior:iteration_ids]{posterior::iteration_ids()}}, and
+\code{\link[posterior:draw_ids]{posterior::draw_ids()}} return the actual distinct IDs in ascending order,
+reading only the relevant index column. ID methods require an open source.
+
 Returns an S3 object of class \code{lazydraws}. Use \code{\link[posterior:subset_draws]{posterior::subset_draws()}}
 to execute a selection and return an ordinary \link[posterior:draws_df]{posterior::draws_df}. Only
 selected parameter values enter R. With no selectors, all draws are read.

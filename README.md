@@ -14,6 +14,11 @@ library(posterior)
 drw <- load_draws("draws.parquet")
 print(drw)                       # counts and the first few variable names
 variables(drw)                   # all variable names, without reading draws
+nchains(drw)
+niterations(drw)
+ndraws(drw)
+nvariables(drw)
+chain_ids(drw)                   # reads only the chain index column
 drw |>
   subset_draws(variable = c("mu", "theta"), chain = 1:2) |>
   summarise_draws()
@@ -40,6 +45,13 @@ The source stays open and reusable after subsetting. `close_draws()` closes its
 connection; previously returned draws remain usable. Automatic cleanup is a
 fallback when the last object holding the connection is garbage collected.
 Reopen the file in another R session rather than saving the live connection.
+
+`nchains()`, `niterations()`, `ndraws()`, and `nvariables()` use cached metadata
+and also work after closing the source. `nvariables()` accepts the same options
+as `variables()`, including `with_indices = FALSE` to count base variable names.
+`chain_ids()`, `iteration_ids()`, and `draw_ids()` read only their respective
+index column and return the actual distinct IDs in ascending order. These ID
+methods require an open source; they do not assume IDs are consecutive.
 
 Variable expansion, regex matching, exclusion, duplicate selection, draw merging,
 and index repair follow `posterior::subset_draws()`. Row selection first reads

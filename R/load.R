@@ -13,6 +13,12 @@
 #'   `print(x, max_variables = ...)`. Cached details describe the file at load
 #'   time. The Parquet file must remain available while the connection is used.
 #'
+#'   [posterior::nchains()], [posterior::niterations()], [posterior::ndraws()],
+#'   and [posterior::nvariables()] use cached metadata, including after closing
+#'   the source. [posterior::chain_ids()], [posterior::iteration_ids()], and
+#'   [posterior::draw_ids()] return the actual distinct IDs in ascending order,
+#'   reading only the relevant index column. ID methods require an open source.
+#'
 #'   Returns an S3 object of class `lazydraws`. Use [posterior::subset_draws()]
 #'   to execute a selection and return an ordinary [posterior::draws_df]. Only
 #'   selected parameter values enter R. With no selectors, all draws are read.

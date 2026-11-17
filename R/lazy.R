@@ -96,20 +96,22 @@ print.lazydraws <- function(x,
   source <- if (!is.null(x$file)) x$file else x$source
   vars <- variables(x, reserved = reserved)
   shown <- vars[seq_len(min(max_variables, length(vars)))]
-  counts <- format(c(x$niterations, x$nchains, x$ndraws, length(vars)),
+  counts <- format(c(x$niterations, x$nchains, length(vars)),
                    scientific = FALSE, trim = TRUE)
-  cat("Lazy posterior draws", if (closed) " (closed)" else "", "\n",
-      counts[1], " iterations, ", counts[2], " chains, ", counts[3],
-      " draws, ", counts[4], " variables\n", "Source: ", source, "\n", sep = "")
-  names <- if (length(shown)) paste(shown, collapse = ", ") else {
+  cat("# A lazydraws: ", counts[1], " iterations, ", counts[2],
+      " chains, and ", counts[3], " variables", if (closed) " (closed)" else "",
+      "\n", sep = "")
+  names <- if (length(shown)) paste(shown, collapse = " ") else {
     if (length(vars)) "(not shown)" else "(none)"
   }
-  cat(paste(strwrap(paste0("Variables: ", names), exdent = 2), collapse = "\n"),
+  cat(paste(strwrap(names, prefix = "  "), collapse = "\n"),
       "\n", sep = "")
   remaining <- length(vars) - length(shown)
   if (remaining > 0) {
     cat("# ... with ", remaining, " more variable",
         if (remaining != 1) "s" else "", "\n", sep = "")
   }
+  cat("# ... hidden reserved variables {'", paste(indices, collapse = "', '"),
+      "'}\n", "# ... source: ", source, "\n", sep = "")
   invisible(x)
 }
