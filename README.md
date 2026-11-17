@@ -22,6 +22,16 @@ connection and a view over the Parquet file. `nchains()`, `nvariables()`, `ndraw
 `subset_draws()` will query the database and return a `draws_df` into memory,
 which can be used with `posterior` functions.
 
+Operations such as `mutate_variables()`, `thin_draws()`, `summarise_draws()`,
+and draws-format conversions require in-memory draws. Calling them directly on
+a `lazydraws` object gives an error explaining that you should subset first:
+
+```r
+drw |>
+  subset_draws(variable = c("mu", "theta")) |>
+  mutate_variables(theta_diff = `theta[1]` - `theta[2]`)
+```
+
 The source stays open and reusable after subsetting. `close_draws()` closes its
 connection.
 
